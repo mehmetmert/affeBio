@@ -1,0 +1,1519 @@
+/* ============================================================================
+   affeBio (affeLab: Biology) — Karanlık Laboratuvar & Cam HUD Stilleri
+   Tasarım dili: affeLab ekosistemi (affePhysics / affeChem) ile aynı mimari;
+   Estetik Referanslar: Astra AI Labs, BioDigital Human, Allen Cell Explorer
+   ============================================================================ */
+
+:root {
+  --bg-0: #040a08;
+  --bg-1: #081411;
+  --bg-2: #0c1f19;
+  --panel: rgba(10, 24, 20, 0.75);
+  --panel-hi: rgba(13, 32, 27, 0.9);
+  --panel-solid: #09160f;
+  --border: rgba(255, 255, 255, 0.12);
+  --border-hi: rgba(0, 232, 168, 0.5);
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --cyan: #00e8a8;
+  --violet: #a855f7;
+  --amber: #f59e0b;
+  --crimson: #ff3366;
+  --slate: #64748b;
+  --emerald: #10b981;
+  --radius: 14px;
+  --radius-sm: 9px;
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  --shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="light"] {
+  --bg-0: #f1f5f9;
+  --bg-1: #e2e8f0;
+  --bg-2: #cbd5e1;
+  --panel: rgba(255, 255, 255, 0.84);
+  --panel-hi: rgba(248, 250, 252, 0.94);
+  --panel-solid: #ffffff;
+  --border: rgba(15, 23, 42, 0.14);
+  --border-hi: rgba(5, 150, 105, 0.55);
+  --text: #0f172a;
+  --muted: #475569;
+  --cyan: #047857;
+  --violet: #7c3aed;
+  --amber: #d97706;
+  --crimson: #e11d48;
+  --slate: #475569;
+  --emerald: #059669;
+  --shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html, body {
+  height: 100%;
+  background: radial-gradient(circle at 50% 25%, var(--bg-2) 0%, var(--bg-1) 45%, var(--bg-0) 100%);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13.5px;
+  line-height: 1.45;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+/* ---------- Özel Kaydırma Çubuğu ---------- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(4, 10, 8, 0.4);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.28);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 232, 168, 0.55);
+}
+
+/* ============================================================================
+   1. DNA ÇİFT SARMAL PRELOADER (YÜKLEME EKRANI)
+   ============================================================================ */
+#bioPreloader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: radial-gradient(circle at 50% 42%, #0b1f17 0%, #040a08 72%);
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s ease, transform 0.6s ease;
+  overflow: hidden;
+}
+
+#bioPreloader.preloader-hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(1.04);
+}
+
+.pl-grid-bg {
+  position: absolute;
+  inset: 0;
+  opacity: 0.1;
+  background-image:
+    radial-gradient(#00e8a8 1px, transparent 1px),
+    radial-gradient(#a855f7 1px, transparent 1px);
+  background-size: 36px 36px;
+  background-position: 0 0, 18px 18px;
+  pointer-events: none;
+}
+
+/* DNA Çift Sarmalı: dikey eksende dönen 14 "baz çifti" basamağı */
+.pl-dna-stage {
+  position: relative;
+  width: 220px;
+  height: 230px;
+  margin-bottom: 18px;
+  perspective: 620px;
+}
+
+.pl-dna-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  filter: blur(26px);
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 232, 168, 0.28) 0%, rgba(0, 232, 168, 0) 70%);
+  animation: plPulse 2.8s ease-in-out infinite alternate;
+}
+
+.pl-helix {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  animation: plHelixSpin 5.2s linear infinite;
+}
+
+.pl-rung {
+  position: absolute;
+  left: 50%;
+  width: 118px;
+  height: 2px;
+  top: calc(8px + var(--i) * 15px);
+  transform: translateX(-50%) rotateY(calc(var(--i) * 30deg));
+  transform-style: preserve-3d;
+}
+
+.pl-base {
+  position: absolute;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.pl-base.l { left: 0; }
+.pl-base.r { right: 0; }
+.pl-rung:nth-child(odd) .pl-base.l { background: #00e8a8; box-shadow: 0 0 10px #00e8a8; }
+.pl-rung:nth-child(odd) .pl-base.r { background: #c084fc; box-shadow: 0 0 10px #c084fc; }
+.pl-rung:nth-child(even) .pl-base.l { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+.pl-rung:nth-child(even) .pl-base.r { background: #ff3366; box-shadow: 0 0 10px #ff3366; }
+
+.pl-rung-bar {
+  position: absolute;
+  inset: 0;
+  top: 3px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(0, 232, 168, 0.6), rgba(255, 255, 255, 0.25), rgba(192, 132, 252, 0.6));
+}
+
+@keyframes plHelixSpin {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+
+@keyframes plPulse {
+  0% { transform: scale(0.9); opacity: 0.6; }
+  100% { transform: scale(1.1); opacity: 1; }
+}
+
+.pl-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 6px;
+}
+.pl-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #00e8a8 0%, #a855f7 100%);
+  color: #040a08;
+  font-weight: 900;
+  font-size: 17px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 20px rgba(0, 232, 168, 0.45);
+}
+.pl-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(90deg, #ffffff, #00e8a8, #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.pl-sub {
+  font-size: 12.5px;
+  color: #94a3b8;
+  margin-bottom: 18px;
+  text-align: center;
+}
+.pl-progress-shell {
+  width: min(380px, 88vw);
+  height: 7px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(0, 232, 168, 0.25);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.pl-progress-bar {
+  height: 100%;
+  width: 15%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #00e8a8, #a855f7, #ff3366);
+  box-shadow: 0 0 16px rgba(0, 232, 168, 0.75);
+  transition: width 0.24s ease;
+}
+.pl-status-row {
+  width: min(380px, 88vw);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  font-family: var(--mono);
+  color: #00e8a8;
+  margin-bottom: 20px;
+}
+.pl-fact {
+  max-width: 480px;
+  padding: 11px 16px;
+  border-radius: 12px;
+  background: rgba(10, 24, 20, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  font-size: 12px;
+  color: #cbd5e1;
+  text-align: center;
+  line-height: 1.5;
+}
+.pl-fact b {
+  color: #00e8a8;
+}
+
+/* ============================================================================
+   2. ÜST GEZİNME ÇUBUĞU (TOPBAR & 4 ANA MODÜL SEKMESİ)
+   ============================================================================ */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  background: rgba(4, 10, 8, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  flex-wrap: wrap;
+}
+
+html[data-theme="light"] .topbar {
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #00e8a8 0%, #a855f7 100%);
+  color: #040a08;
+  font-weight: 900;
+  font-size: 15px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 3px 15px rgba(0, 232, 168, 0.35);
+}
+
+.brand-title {
+  font-weight: 800;
+  font-size: 15.5px;
+  letter-spacing: -0.02em;
+}
+
+.brand-ver {
+  font-size: 10.5px;
+  color: var(--muted);
+  display: block;
+}
+
+.main-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  background: rgba(10, 24, 20, 0.72);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+html[data-theme="light"] .main-nav {
+  background: rgba(226, 232, 240, 0.75);
+}
+
+.nav-tab {
+  padding: 6px 11px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.nav-tab:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.nav-tab.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(0, 232, 168, 0.25), rgba(168, 85, 247, 0.28));
+  border: 1px solid var(--border-hi);
+  box-shadow: 0 2px 12px rgba(0, 232, 168, 0.2);
+}
+
+html[data-theme="light"] .nav-tab.active {
+  color: #0f172a;
+  background: linear-gradient(135deg, rgba(4, 120, 87, 0.2), rgba(124, 58, 237, 0.18));
+}
+
+.nav-badge {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 99px;
+  background: rgba(0, 232, 168, 0.18);
+  color: var(--cyan);
+  font-weight: 700;
+  font-family: var(--mono);
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.icon-btn {
+  padding: 6px 11px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text);
+  transition: all 0.16s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.icon-btn:hover, .icon-btn.active {
+  border-color: var(--border-hi);
+  background: rgba(0, 232, 168, 0.15);
+  box-shadow: 0 0 12px rgba(0, 232, 168, 0.18);
+}
+
+.theory-trigger-btn {
+  background: linear-gradient(135deg, rgba(0, 232, 168, 0.2), rgba(168, 85, 247, 0.24));
+  border-color: rgba(0, 232, 168, 0.45);
+  color: var(--cyan);
+  font-weight: 700;
+}
+
+html[data-theme="light"] .theory-trigger-btn {
+  color: #047857;
+}
+
+/* ============================================================================
+   3. MODÜL GÖRÜNÜMLERİ, ALT SEKME ÇUBUĞU VE 3 SÜTUNLU CAM HUD DÜZENİ
+   ============================================================================ */
+.module-section {
+  display: none;
+  padding: 10px 14px 20px;
+  min-height: calc(100vh - 58px);
+}
+
+.module-section.active {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.subtab-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px;
+  background: var(--panel);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  flex-wrap: wrap;
+}
+
+.subtab-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.subtab-btn {
+  padding: 6px 13px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  border: 1px solid transparent;
+  transition: all 0.16s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.subtab-btn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.subtab-btn.active {
+  color: var(--text);
+  background: rgba(0, 232, 168, 0.14);
+  border-color: var(--border-hi);
+  box-shadow: 0 0 12px rgba(0, 232, 168, 0.15);
+}
+
+.subtab-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* 3 Sütunlu Laboratuvar İskeleti: Sol Kontrol | Merkez Sahne | Sağ Telemetri */
+.lab-grid {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr) 340px;
+  gap: 12px;
+  align-items: stretch;
+  flex: 1;
+  min-height: calc(100vh - 130px);
+}
+
+.lab-grid.two-col {
+  grid-template-columns: 330px minmax(0, 1fr);
+}
+
+/* Cam Paneller (Glassmorphism HUD) */
+.hud-panel {
+  background: var(--panel);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  box-shadow: var(--shadow);
+  overflow-y: auto;
+  max-height: calc(100vh - 126px);
+}
+
+.hud-section {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 10px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+html[data-theme="light"] .hud-section {
+  background: rgba(15, 23, 42, 0.03);
+  border-color: rgba(15, 23, 42, 0.09);
+}
+
+.hud-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cyan);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+/* Merkez 2B/3B Simülasyon Sahnesi */
+.stage-panel {
+  position: relative;
+  background: radial-gradient(circle at 50% 45%, #0a1b15 0%, #040a08 85%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 540px;
+  box-shadow: var(--shadow);
+}
+
+html[data-theme="light"] .stage-panel {
+  background: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 90%);
+}
+
+/* Araç çubuğunun altında kalan tüm alan: kaydırıcı satır sayısı değişse bile
+   (flex-wrap ile 1 veya 2 satıra çıkabilir), üstündeki HUD rozetleri ve
+   banner her zaman BU kutuya göre (top/bottom) hizalanır, stage-panel'in
+   tamamına göre değil — böylece araç çubuğuyla asla çakışmaz. */
+.stage-viewport {
+  position: relative;
+  flex: 1;
+  min-height: 480px;
+  overflow: hidden;
+}
+
+.stage-canvas-wrap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.stage-canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+/* Gerçek BodyParts3D veri seti indirilirken / çözülürken Modül 1 üstünde gösterilen katman. */
+.anat-load-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 10, 8, 0.86);
+  backdrop-filter: blur(2px);
+}
+.anat-load-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 26px;
+  text-align: center;
+}
+.anat-load-box small {
+  color: var(--muted);
+  font-size: 11.5px;
+  max-width: 320px;
+  line-height: 1.5;
+}
+.anat-load-box.is-error small {
+  color: #ff3366;
+}
+.anat-search-results {
+  margin-top: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.anat-load-overlay[hidden] {
+  display: none;
+}
+.lab-tool-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Sahne Üstü Yüzen Telemetri / Durum Rozetleri (Floating HUD Overlay) */
+.stage-overlay-top {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  pointer-events: none;
+  z-index: 10;
+  flex-wrap: wrap;
+}
+
+.stage-overlay-top > * {
+  pointer-events: auto;
+}
+
+.stage-overlay-bottom {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: none;
+  z-index: 10;
+  flex-wrap: wrap;
+}
+
+.stage-overlay-bottom > * {
+  pointer-events: auto;
+}
+
+.hud-badge-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hud-pill {
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(8, 18, 15, 0.82);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 11.5px;
+  color: #e2e8f0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+}
+
+.hud-pill b {
+  color: #00e8a8;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.dot-a { background: #00e8a8; box-shadow: 0 0 8px #00e8a8; }
+.dot-b { background: #a855f7; box-shadow: 0 0 8px #a855f7; }
+.dot-c { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+.dot-d { background: #ff3366; box-shadow: 0 0 8px #ff3366; }
+.dot-n { background: #64748b; }
+
+/* ============================================================================
+   4. KONTROL ELEMANLARI (SLIDERS, SEGMENTED BUTTONS, STEPPERS, CHIPS)
+   ============================================================================ */
+.ctrl-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ctrl-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.ctrl-label b {
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(148, 163, 184, 0.22);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--cyan);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 10px rgba(0, 232, 168, 0.65);
+  transition: transform 0.12s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+}
+
+.bio-select, .bio-input {
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: rgba(4, 10, 8, 0.65);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+}
+
+html[data-theme="light"] .bio-select,
+html[data-theme="light"] .bio-input {
+  background: #ffffff;
+}
+
+.bio-select:focus, .bio-input:focus {
+  border-color: var(--cyan);
+}
+
+.btn-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.btn-grid.cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.btn-grid.cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.mode-btn {
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.mode-btn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.mode-btn.active {
+  color: var(--text);
+  background: rgba(0, 232, 168, 0.16);
+  border-color: var(--border-hi);
+  box-shadow: 0 0 10px rgba(0, 232, 168, 0.16);
+}
+
+.mode-btn.alert-btn.active {
+  background: rgba(255, 51, 102, 0.22);
+  border-color: #ff3366;
+  color: #fda4af;
+  box-shadow: 0 0 14px rgba(255, 51, 102, 0.35);
+}
+
+.action-btn {
+  padding: 8px 12px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #00e8a8 0%, #047857 100%);
+  color: #04140e;
+  font-weight: 700;
+  font-size: 12px;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(0, 232, 168, 0.3);
+  transition: transform 0.14s ease, filter 0.14s ease;
+}
+
+.action-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.action-btn.amber {
+  background: linear-gradient(135deg, #fbbf24 0%, #ea580c 100%);
+  color: #1c0a00;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.32);
+}
+
+.action-btn.purple {
+  background: linear-gradient(135deg, #c084fc 0%, #7c3aed 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.32);
+}
+
+.action-btn.crimson {
+  background: linear-gradient(135deg, #ff3366 0%, #be123c 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(255, 51, 102, 0.32);
+}
+
+/* ============================================================================
+   5. TELEMETRİ KARTLARI VE KANVAS GRAFİKLERİ
+   ============================================================================ */
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.tel-card {
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: rgba(4, 10, 8, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+html[data-theme="light"] .tel-card {
+  background: rgba(241, 245, 249, 0.9);
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
+.tel-card small {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.tel-card b {
+  font-size: 13px;
+  font-family: var(--mono);
+  color: var(--cyan);
+}
+
+.plot-canvas {
+  width: 100%;
+  height: 155px;
+  display: block;
+  background: rgba(4, 10, 8, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+/* Gen / Kodon Rozeti (nuclide-box ekosistem desenine karşılık gelir) */
+.gene-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gene-box {
+  min-width: 68px;
+  height: 68px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(0, 232, 168, 0.18), rgba(168, 85, 247, 0.18));
+  border: 1px solid var(--border-hi);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-family: var(--mono);
+}
+
+.gene-nums {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  line-height: 1.1;
+  text-align: right;
+  color: var(--muted);
+}
+
+.gene-sym {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+/* ============================================================================
+   6. GENEL LABORATUVAR BİLEŞEN KİTİ (Üst Araç Çubuğu, Mod Anahtarı, Kartlar,
+      Çipler, Modal, Toast) — her 4 modülde ortak kullanılan "lab-*" desenleri
+   ============================================================================ */
+html[data-matter="alert"] {
+  --cyan: #ff2ec4;
+  --border-hi: rgba(255, 46, 196, 0.55);
+}
+
+.lab-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  padding: 6px 10px;
+  background: rgba(4, 10, 8, 0.78);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+}
+
+.lab-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  transition: all 0.16s ease;
+  white-space: nowrap;
+}
+
+.lab-tool-btn:hover,
+.lab-tool-btn.active {
+  border-color: var(--cyan);
+  background: rgba(0, 232, 168, 0.16);
+  color: var(--cyan);
+  box-shadow: 0 0 12px rgba(0, 232, 168, 0.25);
+}
+
+.lab-tool-btn.danger:hover,
+.lab-tool-btn.danger.active {
+  border-color: #ff3366;
+  background: rgba(255, 51, 102, 0.2);
+  color: #fda4af;
+  box-shadow: 0 0 14px rgba(255, 51, 102, 0.35);
+}
+
+.lab-tool-btn.emerald:hover,
+.lab-tool-btn.emerald.active {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+/* N-sekmeli (2/3/4) genel segmented mod anahtarı */
+.lab-mode-switch {
+  display: grid;
+  gap: 4px;
+  background: rgba(4, 10, 8, 0.65);
+  padding: 4px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+}
+.lab-mode-switch.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.lab-mode-switch.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.lab-mode-switch.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+.lab-mode-tab {
+  padding: 6px 4px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted);
+  text-align: center;
+  letter-spacing: 0.02em;
+  transition: all 0.15s ease;
+}
+
+.lab-mode-tab.active {
+  background: linear-gradient(135deg, rgba(0, 232, 168, 0.22), rgba(168, 85, 247, 0.22));
+  color: var(--cyan);
+  border: 1px solid var(--border-hi);
+}
+
+/* Renkli Etkileşimli Lejant (katman/organel/alt kabuk gibi listeler için) */
+.lab-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.lab-legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: rgba(13, 32, 27, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.lab-legend-chip .sw {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.lab-legend-chip.off {
+  opacity: 0.32;
+  filter: grayscale(0.7);
+}
+
+.lab-legend-chip:hover {
+  transform: translateY(-1px);
+  border-color: var(--cyan);
+}
+
+/* Genel 2 Sütunlu Kart Izgarası (organ listesi, organel listesi, senaryo listesi) */
+.lab-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.lab-card-grid.single-col {
+  grid-template-columns: 1fr;
+}
+
+.lab-card {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(4, 10, 8, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: all 0.14s ease;
+}
+
+.lab-card:hover,
+.lab-card.active {
+  border-color: var(--cyan);
+  background: rgba(0, 232, 168, 0.14);
+}
+
+.lab-card b {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--cyan);
+}
+
+.lab-card span {
+  font-size: 10.5px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.lab-card small {
+  font-size: 9.5px;
+  color: var(--muted);
+}
+
+/* Giriş çubuğu ve hızlı çipler (DNA sekansı, SMILES vb. serbest metin girişleri) */
+.lab-build-bar {
+  display: flex;
+  gap: 6px;
+}
+
+.lab-chip-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.lab-chip {
+  padding: 3px 8px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--cyan);
+  transition: all 0.14s ease;
+}
+
+.lab-chip:hover {
+  background: rgba(0, 232, 168, 0.18);
+  border-color: var(--cyan);
+}
+
+/* Rehberli Görev / Durum Sahne Altı Bandı */
+.lab-scene-banner {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 48px;
+  z-index: 12;
+  background: rgba(8, 16, 14, 0.92);
+  border: 1px solid var(--border-hi);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+}
+
+/* Genel Modaller (Karşılaştırma / Ders / Analiz / Geçmiş) */
+.lab-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  background: rgba(4, 10, 8, 0.82);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.lab-modal {
+  width: min(860px, 95vw);
+  max-height: 88vh;
+  background: var(--panel-hi);
+  border: 1px solid var(--border-hi);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
+}
+
+.lab-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lab-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.lab-compare-table th,
+.lab-compare-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.lab-compare-table th {
+  color: var(--muted);
+  font-weight: 600;
+  width: 32%;
+}
+
+.lab-toast {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  padding: 8px 18px;
+  border-radius: 99px;
+  background: rgba(8, 16, 14, 0.94);
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  box-shadow: 0 8px 28px rgba(0, 232, 168, 0.35);
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+/* Yapım Aşamasında Kartı (iskelet evresinde henüz derinleştirilmemiş alt-sekmeler için) */
+.lab-soon-card {
+  margin: auto;
+  max-width: 460px;
+  padding: 22px 24px;
+  border-radius: 16px;
+  background: rgba(10, 24, 20, 0.55);
+  border: 1px dashed var(--border-hi);
+  text-align: center;
+  color: var(--muted);
+}
+.lab-soon-card .icon {
+  font-size: 30px;
+  margin-bottom: 8px;
+}
+.lab-soon-card h4 {
+  color: var(--text);
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+.lab-soon-card p {
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+/* ============================================================================
+   7. SCIENCEWIKI "AKADEMİK BİLGİ & TEORİ" ÇEKMECESİ (4 SEKMELİ DRAWER)
+   ============================================================================ */
+.theory-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: rgba(4, 10, 8, 0.65);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.theory-drawer {
+  width: min(620px, 95vw);
+  height: 100%;
+  background: var(--panel-hi);
+  border-left: 1px solid var(--border-hi);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: -16px 0 48px rgba(0, 0, 0, 0.7);
+  overflow-y: auto;
+}
+
+.theory-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.theory-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.theory-tab-btn {
+  padding: 8px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+}
+
+.theory-tab-btn.active {
+  color: var(--cyan);
+  border-color: var(--border-hi);
+  background: rgba(0, 232, 168, 0.14);
+}
+
+.theory-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+.theory-card {
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(4, 10, 8, 0.45);
+  border: 1px solid var(--border);
+}
+
+html[data-theme="light"] .theory-card {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.theory-card h4 {
+  color: var(--cyan);
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.formula-box {
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(0, 232, 168, 0.06);
+  border: 1px solid rgba(0, 232, 168, 0.24);
+  margin: 8px 0;
+  overflow-x: auto;
+}
+
+.task-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(168, 85, 247, 0.08);
+  border: 1px solid rgba(168, 85, 247, 0.28);
+  margin-bottom: 8px;
+}
+
+.task-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--violet);
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   8. RESPONSIVE (MOBİL VE TABLET BOTTOM-SHEET / AKORDEON UYUMU)
+   ============================================================================ */
+@media (max-width: 1220px) {
+  .lab-grid {
+    grid-template-columns: 290px minmax(0, 1fr);
+  }
+  .lab-grid > .hud-panel:last-child {
+    grid-column: 1 / -1;
+    max-height: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .topbar {
+    padding: 8px 10px;
+  }
+  .main-nav {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    width: 100%;
+    order: 3;
+  }
+  .lab-grid, .lab-grid.two-col {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+  .stage-panel {
+    order: -1;
+    min-height: 400px;
+  }
+  .stage-viewport {
+    min-height: 380px;
+  }
+  .hud-panel {
+    max-height: none;
+  }
+  .theory-tabs {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .lab-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================================
+   MODÜL 3.2 / 3.3 — CRISPR-Cas9 ve Sanal Biyoteknoloji Laboratuvarları
+   ============================================================================ */
+.crispr-note {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.crispr-note b { color: var(--text); }
+.crispr-mono {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  word-break: break-all;
+  letter-spacing: 0.02em;
+}
+.crispr-guide-list { max-height: none; }
+.crispr-guide-list .lab-card b { font-size: 10.5px; }
+.crispr-msg {
+  font-size: 11.5px;
+  line-height: 1.5;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: rgba(4, 10, 8, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.crispr-steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+}
+.crispr-steps li {
+  padding: 5px 8px;
+  border-radius: 7px;
+  color: var(--muted);
+  border: 1px solid transparent;
+}
+.crispr-steps li.done { color: var(--text); }
+.crispr-steps li.done::after { content: ' ✓'; color: var(--cyan); }
+.crispr-steps li.active {
+  color: var(--cyan);
+  border-color: var(--border-hi);
+  background: rgba(0, 232, 168, 0.1);
+  font-weight: 700;
+}
+.crispr-prot-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.crispr-prot-row small {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+#crisprRepairSection.is-locked {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.mode-btn:disabled,
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+.lab-caption {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 12px;
+  z-index: 5;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(8, 16, 14, 0.85);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  line-height: 1.5;
+  color: #e2e8f0;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+.lab-caption b { color: #fbbf24; }
+.bt-msg {
+  font-size: 11.5px;
+  line-height: 1.5;
+  padding: 6px 9px;
+  border-radius: 8px;
+  margin-bottom: 5px;
+  border-left: 3px solid var(--muted);
+  background: rgba(4, 10, 8, 0.5);
+}
+.bt-msg.ok { border-left-color: var(--cyan); color: var(--text); }
+.bt-msg.warn { border-left-color: #f59e0b; color: #fde68a; }
+.bt-msg.bad { border-left-color: #ff3366; color: #fda4af; }
+html[data-theme="light"] .bt-msg.warn { color: #92400e; }
+html[data-theme="light"] .bt-msg.bad { color: #9f1239; }
+#btCanvas { cursor: crosshair; }
